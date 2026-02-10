@@ -1,25 +1,35 @@
-import { checkoutAction } from '@/lib/payments/actions';
 import { Check, Sparkles } from 'lucide-react';
-import { getStripePrices, getStripeProducts } from '@/lib/payments/stripe';
-import { SubmitButton } from './submit-button';
+import { PricingForm } from './pricing-form'; // Import the new client form
 
 export const revalidate = 3600;
 
 export default async function PricingPage() {
-  const [prices, products] = await Promise.all([
-    getStripePrices(),
-    getStripeProducts(),
-  ]);
+  // Fetch Plan IDs with explicit string fallbacks
+  const baseId = process.env.PAYSTACK_PRICE_ID_BASE || "";
+  const plusId = process.env.PAYSTACK_PRICE_ID_PLUS || "";
 
-  const basePlan = products.find((product) => product.name === 'Base');
-  const plusPlan = products.find((product) => product.name === 'Plus');
-
-  const basePrice = prices.find((price) => price.productId === basePlan?.id);
-  const plusPrice = prices.find((price) => price.productId === plusPlan?.id);
+  const plans = [
+    {
+      name: 'Base',
+      price: 10000, 
+      interval: 'month',
+      trialDays: 7,
+      features: ['Unlimited Usage', 'Unlimited Workspace Members', 'Email Support'],
+      priceId: baseId,
+    },
+    {
+      name: 'Plus',
+      price: 25000, 
+      interval: 'month',
+      trialDays: 7,
+      highlight: true,
+      features: ['Everything in Base, and:', 'Early Access', '24/7 Support'],
+      priceId: plusId,
+    },
+  ];
 
   return (
     <main className="relative min-h-screen w-full overflow-hidden bg-[#fdf2f0] py-20">
-      {/* --- 1. CONSISTENT LIQUID BACKGROUND --- */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[100%] h-[100%] rounded-full bg-[#e87d61] opacity-30 blur-[150px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] rounded-full bg-[#f4a28c] opacity-40 blur-[130px]" />
@@ -37,31 +47,9 @@ export default async function PricingPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          <PricingCard
-            name={basePlan?.name || 'Base'}
-            price={basePrice?.unitAmount || 800}
-            interval={basePrice?.interval || 'month'}
-            trialDays={basePrice?.trialPeriodDays || 7}
-            features={[
-              'Unlimited Usage',
-              'Unlimited Workspace Members',
-              'Email Support',
-            ]}
-            priceId={basePrice?.id}
-          />
-          <PricingCard
-            name={plusPlan?.name || 'Plus'}
-            price={plusPrice?.unitAmount || 1200}
-            interval={plusPrice?.interval || 'month'}
-            trialDays={plusPrice?.trialPeriodDays || 7}
-            highlight={true} // Adds a special glow to the Plus plan
-            features={[
-              'Everything in Base, and:',
-              'Early Access to New Features',
-              '24/7 Support + Slack Access',
-            ]}
-            priceId={plusPrice?.id}
-          />
+          {plans.map((plan) => (
+            <PricingCard key={plan.name} {...plan} />
+          ))}
         </div>
       </div>
     </main>
@@ -82,7 +70,7 @@ function PricingCard({
   interval: string;
   trialDays: number;
   features: string[];
-  priceId?: string;
+  priceId: string; 
   highlight?: boolean;
 }) {
   return (
@@ -94,16 +82,17 @@ function PricingCard({
       }
       backdrop-blur-2xl
     `}>
-      {/* Subtle White Reflection on top edge */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[1px] bg-gradient-to-r from-transparent via-white/80 to-transparent" />
 
-      <h2 className="text-3xl font-[1000] text-gray-900 mb-2 tracking-tighter uppercase">{name}</h2>
-      <p className="text-sm font-bold text-[#e87d61] mb-6 tracking-wide">
+      <h2 className="text-3xl font-[1000] text-gray-900 mb-2 tracking-tighter uppercase text-center">{name}</h2>
+      <p className="text-sm font-bold text-[#e87d61] mb-6 tracking-wide text-center uppercase">
         WITH {trialDays} DAY FREE TRIAL
       </p>
       
-      <div className="flex items-baseline mb-8">
-        <span className="text-5xl font-[1000] text-gray-900 tracking-tighter">${price / 100}</span>
+      <div className="flex items-baseline mb-8 justify-center">
+        <span className="text-5xl font-[1000] text-gray-900 tracking-tighter">
+            ₦{price.toLocaleString()}
+        </span>
         <span className="ml-2 text-sm font-bold text-gray-500 uppercase tracking-tighter opacity-70">
           / {interval}
         </span>
@@ -120,13 +109,8 @@ function PricingCard({
         ))}
       </ul>
 
-      <form action={checkoutAction}>
-        <input type="hidden" name="priceId" value={priceId} />
-        {/* We keep the SubmitButton as is, but you could wrap it in a div to center it */}
-        <div className="flex justify-center">
-            <SubmitButton />
-        </div>
-      </form>
+      {/* Render the Client Component Form */}
+      <PricingForm priceId={priceId} />
     </div>
   );
 }

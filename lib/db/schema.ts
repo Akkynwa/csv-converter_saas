@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   integer,
+  jsonb, // Added for large file row storage
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -70,7 +71,7 @@ export const invitations = pgTable('invitations', {
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
-// NEW: Conversion History Table
+// For general history tracking
 export const conversionHistory = pgTable('conversion_history', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
@@ -82,18 +83,48 @@ export const conversionHistory = pgTable('conversion_history', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// NEW: For storing actual 10k+ rows for download
+export const processedData = pgTable('processed_data', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id')
+    .notNull()
+    .references(() => teams.id),
+  batchId: text('batch_id').notNull(), // To group rows from one upload
+  fileName: text('file_name').notNull(),
+  rowData: jsonb('row_data').notNull(), // Flexible storage for CSV columns
+  status: varchar('status', { length: 20 }).notNull().default('pending'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const feedback = pgTable('feedback', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id),
+  message: text('message').notNull(),
+  type: varchar('type', { length: 50 }).default('general'), // 'bug', 'feature', 'general'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 // --- RELATIONS ---
 
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),
   activityLogs: many(activityLogs),
   invitations: many(invitations),
-  conversionHistory: many(conversionHistory), // Linked to Teams
+  conversionHistory: many(conversionHistory),
+  processedData: many(processedData), // Link added
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
   teamMembers: many(teamMembers),
   invitationsSent: many(invitations),
+  feedback: many(feedback),
+}));
+
+export const processedDataRelations = relations(processedData, ({ one }) => ({
+  team: one(teams, {
+    fields: [processedData.teamId],
+    references: [teams.id],
+  }),
 }));
 
 export const conversionHistoryRelations = relations(conversionHistory, ({ one }) => ({
@@ -135,13 +166,6 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
     references: [users.id],
   }),
 }));
-export const feedback = pgTable('feedback', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id),
-  message: text('message').notNull(),
-  type: varchar('type', { length: 50 }).default('general'), // 'bug', 'feature', 'general'
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
 
 // --- TYPES ---
 
@@ -157,13 +181,21 @@ export type Invitation = typeof invitations.$inferSelect;
 export type NewInvitation = typeof invitations.$inferInsert;
 export type ConversionHistory = typeof conversionHistory.$inferSelect;
 export type NewConversionHistory = typeof conversionHistory.$inferInsert;
+export type ProcessedData = typeof processedData.$inferSelect;
+export type NewProcessedData = typeof processedData.$inferInsert;
 
 export type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {
     user: Pick<User, 'id' | 'name' | 'email'>;
   })[];
 };
-
+// Add this relations block for feedback
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(users, {
+    fields: [feedback.userId],
+    references: [users.id],
+  }),
+}));
 export enum ActivityType {
   SIGN_UP = 'SIGN_UP',
   SIGN_IN = 'SIGN_IN',

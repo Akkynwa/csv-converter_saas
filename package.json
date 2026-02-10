@@ -21,9 +21,8 @@
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "csv-parse": "^6.1.0",
     "dotenv": "^16.5.0",
-    "drizzle-kit": "^0.31.1",
-    "drizzle-orm": "^0.43.1",
     "framer-motion": "^12.25.0",
     "jose": "^6.0.11",
     "lucide-react": "^0.511.0",
@@ -46,6 +45,8 @@
   },
   "devDependencies": {
     "@types/canvas-confetti": "^1.9.0",
-    "@types/papaparse": "^5.5.2"
+    "@types/papaparse": "^5.5.2",
+    "drizzle-kit": "^0.31.9",
+    "drizzle-orm": "^0.45.1"
   }
 }
