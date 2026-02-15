@@ -13,21 +13,18 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // GET is always safe in Server Components
         getAll() {
           return cookieStore.getAll();
         },
-        // SET and REMOVE are only functional in Actions/Route Handlers
-        // Next.js will throw an error if called in a Server Component
         setAll(cookiesToSet) {
           try {
+            // We use a for...of or forEach to iterate safely
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
             );
-          } catch {
-            // This catch is necessary because Server Components 
-            // cannot set cookies. The Middleware handles the 
-            // session refresh instead.
+          } catch (error) {
+            // This is expected when called from Server Components.
+            // Session refreshing is handled by middleware.ts.
           }
         },
       },
