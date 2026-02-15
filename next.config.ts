@@ -8,8 +8,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   experimental: {
-    ppr: true,
-    // Turn this off as it's known to crash /_not-found in Canary 59
+ppr: false, // 👈 Turn this OFF for now    // Turn this off as it's known to crash /_not-found in Canary 59
     clientSegmentCache: false,
   },
   // Ensure this is at the top level for Next 15
