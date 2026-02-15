@@ -147,13 +147,12 @@ export default function SecurityPage() {
                   />
                   {deleteState.error && (
                     <p className="text-rose-600 text-[10px] font-black uppercase tracking-widest">{deleteState.error}</p>
-                  )}
-                  <Button
-                    type="submit"
-                    variant="destructive"
-                    className="rounded-xl font-bold h-11 shadow-lg shadow-rose-200"
-                    disabled={isDeletePending}
-                  >
+                  )}<Button
+  type="submit"
+  variant="outline" // ✅ This is an allowed type
+  className="rounded-xl font-bold h-11 shadow-lg shadow-rose-200 bg-red-50 text-red-600 border-red-200 hover:bg-red-100" 
+  disabled={isDeletePending}
+>
                     {isDeletePending ? (
                       <Loader2 className="animate-spin h-4 w-4" />
                     ) : (

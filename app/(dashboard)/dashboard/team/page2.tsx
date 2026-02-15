@@ -99,11 +99,11 @@ function TeamMembers() {
               <li key={member.id} className="flex items-center justify-between p-4 px-6 hover:bg-gray-50/50 transition-colors">
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                    <AvatarImage src={member.user.image || ''} />
-                    <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs">
-                      {getUserDisplayName(member.user).split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
+  {/* ✅ Just use Fallback until you add an 'image' column to your Drizzle schema */}
+  <AvatarFallback className="bg-orange-100 text-orange-700 font-bold text-xs">
+    {getUserDisplayName(member.user).split(' ').map(n => n[0]).join('')}
+  </AvatarFallback>
+</Avatar>
                   <div>
                     <p className="text-sm font-bold text-gray-900">{getUserDisplayName(member.user)}</p>
                     <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest">{member.role}</p>

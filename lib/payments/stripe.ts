@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { Team } from '@/lib/db/schema';
 import { getUser } from '@/lib/db/queries';
+import { createClient } from '@/lib/supabase/server';
 
-// We leave these empty or mock them so the Stripe library doesn't crash Turbopack
-export const stripe = null; 
+// 1. Export a "stripe" mock so your webhook/other files don't break during import
+export const stripe = null;
 
 export async function createCheckoutSession({
   team,
@@ -30,8 +31,8 @@ export async function createCheckoutSession({
     body: JSON.stringify({
       email: user.email,
       amount: amount.toString(),
-      plan: priceId,
-      callback_url: `${process.env.BASE_URL}/api/paystack/callback`,
+      plan: priceId, // Paystack Plan Code
+      callback_url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/paystack/callback`,
       metadata: {
         teamId: team.id,
         userId: user.id,
@@ -43,23 +44,38 @@ export async function createCheckoutSession({
 
   if (!resData.status) {
     console.error('Paystack Error:', resData.message);
-    throw new Error('Could not initialize Paystack payment');
+    throw new Error(resData.message || 'Could not initialize Paystack payment');
   }
 
   redirect(resData.data.authorization_url);
 }
 
-// Paystack doesn't have a pre-built portal like Stripe, 
-// so we redirect to your internal billing page.
+// 2. The missing function the build was asking for
+export async function handleSubscriptionChange(payload: any) {
+  const supabase = await createClient();
+  
+  // Paystack webhooks send data in a different format than Stripe
+  // Assuming payload is the 'data' object from Paystack webhook
+  const customerEmail = payload.customer.email;
+  const planCode = payload.plan.plan_code;
+  const status = payload.status; // e.g., 'active'
+
+  const isPro = status === 'active';
+
+  const { error } = await supabase
+    .from('teams')
+    .update({ 
+      plan_name: isPro ? 'pro' : 'free',
+      subscription_status: status 
+    })
+    .filter('metadata->>email', 'eq', customerEmail); // Adjust based on how you store team info
+
+  if (error) console.error('Error updating Paystack subscription:', error);
+}
+
 export async function createCustomerPortalSession(team: Team) {
   redirect('/dashboard/billing');
 }
 
-// Mock these functions so your Pricing Page doesn't crash during the transition
-export async function getStripePrices() {
-  return [];
-}
-
-export async function getStripeProducts() {
-  return [];
-}
+export async function getStripePrices() { return []; }
+export async function getStripeProducts() { return []; }

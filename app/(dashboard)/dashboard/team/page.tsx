@@ -1,18 +1,27 @@
-// app/(dashboard)/dashboard/team/page.tsx
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { inviteMemberAction, removeMemberAction } from '../../dashboard/team/actions';
 import { UserPlus, Trash2 } from 'lucide-react';
-import { getTeamMembers } from '@/lib/db/queries'; // You'll need this query helper
-import { getUser } from '@/lib/db/queries';
+import { getTeamMembers, getUser } from '@/lib/db/queries'; 
 import { redirect } from 'next/navigation';
 
 export default async function TeamPage() {
   const user = await getUser();
   if (!user) redirect('/sign-in');
 
-  // Fetching real data from your DB
   const teamMembers = await getTeamMembers(user.id);
+
+  // 1. Wrap the actions to return Promise<void> instead of Promise<{success: boolean}>
+  // This satisfies the TypeScript requirement for the 'action' prop in <form>
+  async function handleInvite(formData: FormData) {
+    'use server'; // Ensure this runs on the server
+    await inviteMemberAction(formData);
+  }
+
+  async function handleRemove(formData: FormData) {
+    'use server';
+    await removeMemberAction(formData);
+  }
 
   return (
     <div className="space-y-8">
@@ -26,7 +35,8 @@ export default async function TeamPage() {
         <h2 className="text-lg font-black mb-4 flex items-center gap-2">
           <UserPlus className="size-5 text-[#e87d61]" /> Invite New Member
         </h2>
-        <form action={inviteMemberAction} className="flex gap-4">
+        {/* Use the wrapper here */}
+        <form action={handleInvite} className="flex gap-4">
           <Input 
             name="email" 
             type="email"
@@ -55,9 +65,10 @@ export default async function TeamPage() {
               <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 bg-gray-100 rounded-full text-gray-500">
                 {member.role}
               </span>
-              {/* Only show delete if it's not the owner and current user is Admin */}
+              
               {member.role !== 'Owner' && (
-                <form action={removeMemberAction}>
+                /* Use the wrapper here as well */
+                <form action={handleRemove}>
                   <input type="hidden" name="memberId" value={member.id} />
                   <Button variant="ghost" size="icon" type="submit" className="text-gray-400 hover:text-red-500">
                     <Trash2 className="size-4" />

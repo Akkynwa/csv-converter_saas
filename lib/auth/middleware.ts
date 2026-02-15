@@ -65,8 +65,8 @@ export function withTeam<T>(action: ActionWithTeamFunction<T>) {
       redirect('/sign-in');
     }
 
-    const team = await getTeamForUser();
-    if (!team) {
+// Pass the user ID to the function
+const team = await getTeamForUser(Number(user.id));    if (!team) {
       throw new Error('Team not found');
     }
 
