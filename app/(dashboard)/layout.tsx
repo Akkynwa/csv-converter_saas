@@ -16,6 +16,7 @@ import { useRouter } from 'next/navigation';
 import { User } from '@/lib/db/schema';
 import useSWR, { mutate } from 'swr';
 
+
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 function UserMenu() {
@@ -118,7 +119,9 @@ function Header() {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <section className="flex flex-col min-h-screen pt-20 md:pt-28">
+<Suspense fallback={<div className="h-20" />}>
       <Header />
+      </Suspense>
       <main className="flex-1 w-full overflow-x-hidden">
         {children}
       </main>
