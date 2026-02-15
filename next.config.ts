@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     ppr: true,
+    
   },
   // Ensure this is at the top level
   serverExternalPackages: ['@supabase/ssr'],
