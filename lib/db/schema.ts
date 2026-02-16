@@ -5,7 +5,7 @@ import {
   text,
   timestamp,
   integer,
-  jsonb, // Added for large file row storage
+  jsonb,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -14,7 +14,7 @@ import { relations } from 'drizzle-orm';
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }),
-  image: text('image'), // 👈 Add this line
+  // image: text('image'), 
   email: varchar('email', { length: 255 }).notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: varchar('role', { length: 20 }).notNull().default('member'),
@@ -28,8 +28,11 @@ export const teams = pgTable('teams', {
   name: varchar('name', { length: 100 }).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  // Billing Fields (Supports both Stripe and Paystack)
   stripeCustomerId: text('stripe_customer_id').unique(),
   stripeSubscriptionId: text('stripe_subscription_id').unique(),
+  paystackCustomerId: text('paystack_customer_id').unique(), // Added for Paystack
+  paystackSubscriptionCode: text('paystack_subscription_code').unique(), // Added for Paystack
   stripeProductId: text('stripe_product_id'),
   planName: varchar('plan_name', { length: 50 }),
   subscriptionStatus: varchar('subscription_status', { length: 20 }),
@@ -72,7 +75,6 @@ export const invitations = pgTable('invitations', {
   status: varchar('status', { length: 20 }).notNull().default('pending'),
 });
 
-// For general history tracking
 export const conversionHistory = pgTable('conversion_history', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
@@ -84,15 +86,14 @@ export const conversionHistory = pgTable('conversion_history', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-// NEW: For storing actual 10k+ rows for download
 export const processedData = pgTable('processed_data', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id')
     .notNull()
     .references(() => teams.id),
-  batchId: text('batch_id').notNull(), // To group rows from one upload
+  batchId: text('batch_id').notNull(),
   fileName: text('file_name').notNull(),
-  rowData: jsonb('row_data').notNull(), // Flexible storage for CSV columns
+  rowData: jsonb('row_data').notNull(),
   status: varchar('status', { length: 20 }).notNull().default('pending'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -101,7 +102,7 @@ export const feedback = pgTable('feedback', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id),
   message: text('message').notNull(),
-  type: varchar('type', { length: 50 }).default('general'), // 'bug', 'feature', 'general'
+  type: varchar('type', { length: 50 }).default('general'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -112,7 +113,7 @@ export const teamsRelations = relations(teams, ({ many }) => ({
   activityLogs: many(activityLogs),
   invitations: many(invitations),
   conversionHistory: many(conversionHistory),
-  processedData: many(processedData), // Link added
+  processedData: many(processedData),
 }));
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -168,6 +169,13 @@ export const activityLogsRelations = relations(activityLogs, ({ one }) => ({
   }),
 }));
 
+export const feedbackRelations = relations(feedback, ({ one }) => ({
+  user: one(users, {
+    fields: [feedback.userId],
+    references: [users.id],
+  }),
+}));
+
 // --- TYPES ---
 
 export type User = typeof users.$inferSelect;
@@ -187,16 +195,10 @@ export type NewProcessedData = typeof processedData.$inferInsert;
 
 export type TeamDataWithMembers = Team & {
   teamMembers: (TeamMember & {
-    user: Pick<User, 'id' | 'name' | 'email'>;
+    user: Pick<User, 'id' | 'name' | 'email' >; // Included image in type
   })[];
 };
-// Add this relations block for feedback
-export const feedbackRelations = relations(feedback, ({ one }) => ({
-  user: one(users, {
-    fields: [feedback.userId],
-    references: [users.id],
-  }),
-}));
+
 export enum ActivityType {
   SIGN_UP = 'SIGN_UP',
   SIGN_IN = 'SIGN_IN',

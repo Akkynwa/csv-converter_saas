@@ -52,11 +52,10 @@ function UserMenu() {
     <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
       <DropdownMenuTrigger className="outline-none focus:ring-0">
         <div className="flex items-center gap-2 p-1 md:pr-3 rounded-full bg-white/50 border border-white/60 hover:bg-white/80 transition-all shadow-sm">
-          <Avatar className="size-7 md:size-8 border border-white">
-  {/* We use a placeholder or null since the 'image' property doesn't exist in your schema */}
-  <AvatarImage src="" alt={user.name || ''} /> 
+  <Avatar className="size-7 md:size-8 border border-white">
+  {/* Remove user.image and just use the fallback initials */}
   <AvatarFallback className="bg-[#e87d61] text-white font-bold text-[10px]">
-    {(user.name || user.email).substring(0, 2).toUpperCase()}
+    {user.email.substring(0, 2).toUpperCase()}
   </AvatarFallback>
 </Avatar>
           <ChevronDown className={`hidden md:block size-4 text-gray-500 transition-transform duration-300 ${isMenuOpen ? 'rotate-180' : ''}`} />

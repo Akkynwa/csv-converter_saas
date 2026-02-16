@@ -36,6 +36,20 @@
       "when": 1771130645269,
       "tag": "0004_little_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1771211270512,
+      "tag": "0005_tough_kingpin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1771212893385,
+      "tag": "0006_needy_tony_stark",
+      "breakpoints": true
     }
   ]
 }
