@@ -6,6 +6,7 @@ import {
   timestamp,
   integer,
   jsonb,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -83,6 +84,7 @@ export const conversionHistory = pgTable('conversion_history', {
   fileName: text('file_name').notNull(),
   rowCount: integer('row_count').notNull(),
   format: text('format').notNull(), // 'json' or 'sql'
+  batchId: text('batch_id'), // <--- MAKE SURE THIS LINE EXISTS
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -106,7 +108,45 @@ export const feedback = pgTable('feedback', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const licenseKeys = pgTable('license_keys', {
+  id: serial('id').primaryKey(),
+  code: varchar('code', { length: 50 }).notNull().unique(), // The AppSumo Code
+  teamId: integer('team_id').references(() => teams.id),   // Linked to a team after activation
+  planType: varchar('plan_type', { length: 20 }).default('lifetime_pro'), 
+  isRedeemed: boolean('is_redeemed').notNull().default(false),
+  redeemedAt: timestamp('redeemed_at'),
+  activatedBy: integer('activated_by').references(() => users.id),
+});
+
+export const mappingTemplates = pgTable('mapping_templates', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(), // e.g., "Monthly Shopify Export"
+  teamId: integer('team_id').references(() => teams.id).notNull(),
+  mapping: jsonb('mapping').notNull(), // Stores { "CSV_Col_1": "DB_Col_A", ... }
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 // --- RELATIONS ---
+
+// Add relations
+export const mappingTemplatesRelations = relations(mappingTemplates, ({ one }) => ({
+  team: one(teams, {
+    fields: [mappingTemplates.teamId],
+    references: [teams.id],
+  }),
+}));
+
+// Update your relations
+export const licenseKeysRelations = relations(licenseKeys, ({ one }) => ({
+  team: one(teams, {
+    fields: [licenseKeys.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [licenseKeys.activatedBy],
+    references: [users.id],
+  }),
+}));
 
 export const teamsRelations = relations(teams, ({ many }) => ({
   teamMembers: many(teamMembers),

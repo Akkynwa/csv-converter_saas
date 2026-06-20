@@ -1,0 +1,1 @@
+ALTER TABLE "conversion_history" ADD COLUMN "batch_id" text;

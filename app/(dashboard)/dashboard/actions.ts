@@ -4,6 +4,7 @@ import { db } from '@/lib/db/drizzle';
 import { conversionHistory, feedback } from '@/lib/db/schema';
 import { getTeamForUser, getUser } from '@/lib/db/queries';
 import { revalidatePath } from 'next/cache';
+import * as XLSX from 'xlsx';
 
 export async function logConversionAction(fileName: string, rowCount: number, format: string) {  const user = await getUser();
   if (!user) return;
@@ -29,4 +30,19 @@ export async function submitFeedback(message: string, type: string) {
     message,
     type,
   });
+}
+export async function processExcel(file: File) {
+  const arrayBuffer = await file.arrayBuffer();
+  
+  // 1. Read the workbook
+  const workbook = XLSX.read(arrayBuffer);
+  
+  // 2. Get the first sheet
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  
+  // 3. Convert to JSON (This matches your current CSV logic!)
+  const jsonData = XLSX.utils.sheet_to_json(worksheet);
+  
+  return jsonData;
 }

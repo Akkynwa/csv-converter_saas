@@ -1,8 +1,9 @@
 import { desc, and, eq, isNull } from 'drizzle-orm';
 import { db } from './drizzle';
-import { activityLogs, teamMembers, teams, users } from './schema';
+import { activityLogs, teamMembers, teams, users, feedback } from './schema';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth/session';
+
 
 export async function getUser() {
   const sessionCookie = (await cookies()).get('session');
@@ -104,7 +105,18 @@ export async function getUserWithTeam(userId: number) {
 
   return result[0];
 }
-
+export async function getAllRegisteredUsers() {
+  return await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt)); // Newest users at the top
+}
 export async function getActivityLogs() {
   const user = await getUser();
   if (!user) throw new Error('User not authenticated');
@@ -122,6 +134,20 @@ export async function getActivityLogs() {
     .where(eq(activityLogs.userId, user.id))
     .orderBy(desc(activityLogs.timestamp))
     .limit(10);
+}
+export async function getFeedbackWithUserNames() {
+  return await db
+    .select({
+      feedbackId: feedback.id,
+      message: feedback.message,
+      type: feedback.type,
+      createdAt: feedback.createdAt,
+      userName: users.name,
+      userEmail: users.email,
+    })
+    .from(feedback)
+    .leftJoin(users, eq(feedback.userId, users.id)) // Joins the feedback to the user
+    .orderBy(desc(feedback.createdAt)); // Puts the newest feedback at the top
 }
 
 export async function getTeamForUser(userId: number) {
